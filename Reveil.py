@@ -1,6 +1,7 @@
 import sys
 import os
 import pygame
+from pygame.locals import *
 import logging
 import signal
 import RPi.GPIO as GPIO
@@ -11,6 +12,10 @@ import time
 os.putenv('SDL_FBDEV', '/dev/fb1')
 os.putenv('SDL_MOUSEDRV', 'TSLIB')
 os.putenv('SDL_MOUSEDEV', '/dev/input/touchscreen')
+
+#define
+AFF = 5
+CAP = 6
 
 class  AfficheHeure(Thread):
 	#Thread qui va afficher l'heure en permanance
@@ -39,7 +44,8 @@ class ScreenThd(Thread):
 		print 'initScreen'
 		self.stscr = 0
 		# bouton  nom    x0,y0,w,h,txt,aff,push
-		boutons={'keyb0':[45,200,30,35,'0',0,0]}
+		boutons={'base':[0,0,320,240,' ',0,0]}
+		boutons['keyb0']=[45,200,30,35,'0',0,0]
 		boutons['keyb1']=[10,160,30,35,'1',0,0]
 		boutons['keyb2']=[45,160,30,35,'2',0,0]
 		boutons['keyb3']=[80,160,30,35,'3',0,0]
@@ -58,12 +64,34 @@ class ScreenThd(Thread):
 		pygame.display.update()
 		while NotFinished:
 			print 'runScreen'
+			self.catch()
 			self.redraw()
 			time.sleep(1)
+	#recuperation des appuis sur l'ecran (et les boutons??)
+	def catch(self):
+		for event in pygame.event.get():
+			#print (event.type)
+			if (event.type == MOUSEBUTTONUP):
+				#print('top')
+				pos = pygame.mouse.get_pos()
+				x,y = pos
+				print(pos)
+				for (k,v) in boutons.items():
+					if x>v[0] and x<v[0]+v[2] and y>v[1] and y<v[1]+v[3]:
+						v[CAP]=1
+						print(k)
+					else:
+						v[CAP]=0
+						# print(k)
+				# return
 	def redraw(self):
 		global current_jour,current_min,current_sec
 		lcd.fill(BLACK)
-		if self.stscr == 0:
+		#reinitialisation
+		for (k,v) in boutons.items():
+			v[AFF] = 0
+		#machine etat
+		if self.stscr == 0: #
 			self.screen0()
 		elif self.strscr == 10:
 			self.screen10()
@@ -74,15 +102,15 @@ class ScreenThd(Thread):
 	def screen0(self):
                 #print 'screen0'
                 #activation des boutons a afficher
-                boutons['keyb0'][5]=1
-                boutons['keyb1'][5]=1
-                boutons['keyb2'][5]=1
-                boutons['keyb3'][5]=1
-                boutons['keyb4'][5]=1
-                boutons['keyb5'][5]=1
-                boutons['keyb6'][5]=1
-                boutons['keyb7'][5]=1
-                boutons['keyb8'][5]=1
+                boutons['keyb0'][AFF]=1
+                boutons['keyb1'][AFF]=1
+                boutons['keyb2'][AFF]=1
+                boutons['keyb3'][AFF]=1
+                boutons['keyb4'][AFF]=1
+                boutons['keyb5'][AFF]=1
+                boutons['keyb6'][AFF]=1
+                boutons['keyb7'][AFF]=1
+                boutons['keyb8'][AFF]=1
                 boutons['keyb9'][5]=1
 		for (k,v) in boutons.items():
                         if v[5] == 1:
