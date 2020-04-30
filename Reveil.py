@@ -7,8 +7,12 @@ import signal
 import RPi.GPIO as GPIO
 from threading import Thread
 import time
+# la resolution de l'ecran  est passee a  640x480
+#  la resolution native du PiTft est 320x240
+# pour le tactile, la resolution est de 720x480  mais l'orientation est inversee
+# definitions de l'OS
+# os.environ['SDL_VIDEO_WINDOW_POS'] = "50,50" #.format(0,0)
 
-#definitions de l'OS
 os.putenv('SDL_FBDEV', '/dev/fb1')
 os.putenv('SDL_MOUSEDRV', 'TSLIB')
 os.putenv('SDL_MOUSEDEV', '/dev/input/touchscreen')
@@ -39,28 +43,35 @@ class  AfficheHeure(Thread):
 class ScreenThd(Thread):
 	#Thread d'affichage sur l'ecran. Il gere les captures
 	def __init__(self):
-                global boutons
+                global boutons,tact
 		Thread.__init__(self)
 		print 'initScreen'
 		self.stscr = 0
 		# bouton  nom    x0,y0,w,h,txt,aff,push
-		boutons={'base':[0,0,320,240,' ',0,0]}
-		boutons['keyb0']=[45,200,30,35,'0',0,0]
-		boutons['keyb1']=[10,160,30,35,'1',0,0]
-		boutons['keyb2']=[45,160,30,35,'2',0,0]
-		boutons['keyb3']=[80,160,30,35,'3',0,0]
-		boutons['keyb4']=[10,120,30,35,'4',0,0]
-		boutons['keyb5']=[45,120,30,35,'5',0,0]
-		boutons['keyb6']=[80,120,30,35,'6',0,0]
-		boutons['keyb7']=[10,80,30,35,'7',0,0]
-		boutons['keyb8']=[45,80,30,35,'8',0,0]
-		boutons['keyb9']=[80,80,30,35,'9',0,0]
-		#boutons['keyb2']=[
+		boutons={'base':[0,0,640,480,' ',0,0]}
+		boutons['keyb0']=[90,400,60,70,'0',0,0]
+		boutons['keyb1']=[20,320,60,70,'1',0,0]
+		boutons['keyb2']=[90,320,60,70,'2',0,0]
+		boutons['keyb3']=[160,320,60,70,'3',0,0]
+		boutons['keyb4']=[20,240,60,70,'4',0,0]
+		boutons['keyb5']=[90,240,60,70,'5',0,0]
+		boutons['keyb6']=[160,240,60,70,'6',0,0]
+		boutons['keyb7']=[20,160,60,70,'7',0,0]
+		boutons['keyb8']=[90,160,60,70,'8',0,0]
+		boutons['keyb9']=[160,160,60,70,'9',0,0]
 
+		#transformation pour le tactile
+		#tact nom  xmin xmax ymin ymax
+		tact={'nul':[-1,-1,-1,-1]}
+		for (k,v) in boutons.items():
+			tact[k]=[720-(v[1]+v[3])*720/480,720-v[1]*720/480,v[0]*480/640,(v[0]+v[2])*480/640]
+			#print tact
+		tact.pop('nul')
+		print(tact['keyb7'])
 	def run(self):
 		global NotFinished
 		print 'premierRunScreen'
-		lcd.fill(BLACK)
+		lcd.fill(WHITE)
 		pygame.display.update()
 		while NotFinished:
 			print 'runScreen'
@@ -76,12 +87,12 @@ class ScreenThd(Thread):
 				pos = pygame.mouse.get_pos()
 				x,y = pos
 				print(pos)
-				for (k,v) in boutons.items():
-					if x>v[0] and x<v[0]+v[2] and y>v[1] and y<v[1]+v[3]:
-						v[CAP]=1
+				for (k,v) in tact.items():
+					if x>v[0] and x<v[1] and y>v[2] and y<v[3]:
+						boutons[k][CAP]=1
 						print(k)
 					else:
-						v[CAP]=0
+						boutons[k][CAP]=0
 						# print(k)
 				# return
 	def redraw(self):
@@ -125,7 +136,7 @@ class ScreenThd(Thread):
 		lcd.blit(text,(10,10))
 #Colors
 WHITE = (255,255,255)
-BLACK = (1,1,1)
+BLACK = (150,150,150)
 RED = (255,0,0)
 GREEN = (0,255,0)
 BLUE = (0,0,255)
@@ -140,10 +151,11 @@ NotFinished = True
 
 pygame.init()
 
+#lcd = pygame.display.set_mode((0,0),pygame.NOFRAME)
 lcd = pygame.display.set_mode((320,240))
-
-pygame.mouse.set_visible(False)
-font1 = pygame.font.Font(None,50)
+#time.sleep(2)
+#pygame.mouse.set_visible(False)
+font1 = pygame.font.Font(None,100)
 Screen = ScreenThd()
 Heure = AfficheHeure()
 #Heure.deamon = True #dies with main thread
